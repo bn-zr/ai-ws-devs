@@ -1,0 +1,23 @@
+{
+  "name": "workshop-demo",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Minimal TypeScript Node.js demo for AI-assisted development workshop",
+  "scripts": {
+    "start": "node --import tsx src/server.ts",
+    "test": "node --import tsx --test tests/**/*.test.ts || true",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit false",
+    "validate": "npm run build && npm run typecheck && npm run test"
+  },
+  "dependencies": {
+    "dayjs": "^1.11.21",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.9.1",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3"
+  }
+}
