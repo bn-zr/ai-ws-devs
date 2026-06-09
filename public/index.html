@@ -5,106 +5,502 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Reservation Workshop Demo</title>
   <style>
+    :root {
+      --primary: #0066cc;
+      --primary-hover: #0055aa;
+      --success: #4caf50;
+      --success-bg: #f1f8e9;
+      --error: #f44336;
+      --error-bg: #ffebee;
+      --border: #ddd;
+      --card-bg: #fafafa;
+    }
+
+    * { box-sizing: border-box; }
+
     body {
       font-family: system-ui, -apple-system, sans-serif;
-      max-width: 720px;
+      max-width: 960px;
       margin: 40px auto;
       padding: 0 20px;
       line-height: 1.5;
+      color: #222;
     }
-    h1 { margin-bottom: 0.5em; }
+
+    h1 { margin-bottom: 0.25em; }
+    .subtitle { color: #666; margin-bottom: 32px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 720px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
     .card {
-      border: 1px solid #ddd;
+      border: 1px solid var(--border);
       border-radius: 8px;
       padding: 20px;
       margin-bottom: 24px;
-      background: #fafafa;
+      background: var(--card-bg);
     }
+
     .card h2 { margin-top: 0; font-size: 1.25rem; }
+    .card.full-width { grid-column: 1 / -1; }
+
     label {
       display: block;
       margin: 12px 0 4px;
       font-weight: 500;
+      font-size: 0.9rem;
     }
+
     input, select {
       width: 100%;
       padding: 8px;
       font-size: 1rem;
       border: 1px solid #ccc;
       border-radius: 4px;
-      box-sizing: border-box;
     }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
     button {
       margin-top: 16px;
       padding: 10px 20px;
       font-size: 1rem;
-      background: #0066cc;
+      background: var(--primary);
       color: white;
       border: none;
       border-radius: 4px;
       cursor: pointer;
     }
-    button:hover { background: #0055aa; }
+
+    button:hover { background: var(--primary-hover); }
+    button.secondary { background: #666; }
+    button.secondary:hover { background: #555; }
+    button.danger { background: var(--error); }
+    button.danger:hover { background: #d32f2f; }
+    button.small { padding: 6px 12px; font-size: 0.85rem; margin-top: 0; }
+
     .result {
       margin-top: 16px;
       padding: 12px;
       background: white;
-      border: 1px solid #ddd;
+      border: 1px solid var(--border);
       border-radius: 4px;
       white-space: pre-wrap;
       font-family: ui-monospace, monospace;
+      font-size: 0.85rem;
     }
-    .result.success { border-color: #4caf50; background: #f1f8e9; }
-    .result.error { border-color: #f44336; background: #ffebee; }
+
+    .result.success { border-color: var(--success); background: var(--success-bg); }
+    .result.error { border-color: var(--error); background: var(--error-bg); }
+
+    .inventory {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .inventory-item {
+      flex: 1;
+      min-width: 140px;
+      padding: 12px;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      text-align: center;
+    }
+
+    .inventory-item .count {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .inventory-item .label {
+      font-size: 0.85rem;
+      color: #666;
+      text-transform: capitalize;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    th, td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th { background: #eee; font-weight: 600; }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .badge.confirmed { background: #e3f2fd; color: #1565c0; }
+    .badge.cancelled { background: #fce4ec; color: #c62828; }
+    .badge.completed { background: #e8f5e9; color: #2e7d32; }
+
+    .empty-state {
+      text-align: center;
+      padding: 32px;
+      color: #999;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 24px;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .tab {
+      padding: 10px 20px;
+      background: none;
+      border: none;
+      color: #666;
+      margin-top: 0;
+      border-radius: 4px 4px 0 0;
+      font-weight: 500;
+    }
+
+    .tab.active {
+      background: var(--card-bg);
+      color: var(--primary);
+      border: 1px solid var(--border);
+      border-bottom: 2px solid var(--card-bg);
+      margin-bottom: -2px;
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
   </style>
 </head>
 <body>
-  <h1>Reservation Workshop Demo</h1>
-  <p>Simple UI to manually test the reservation and pricing logic.</p>
+  <h1>Hotel Booking System</h1>
+  <p class="subtitle">Full-featured reservation management for the AI workshop demo.</p>
 
-  <div class="card">
-    <h2>Cancel Reservation</h2>
-    <form id="cancel-form">
-      <label for="reservationDate">Reservation Start (ISO or datetime)</label>
-      <input type="datetime-local" id="reservationDate" required>
-      <button type="submit">Check Cancellation</button>
-    </form>
-    <div id="cancel-result" class="result" style="display:none;"></div>
+  <div class="tabs">
+    <button class="tab active" data-tab="bookings">Bookings</button>
+    <button class="tab" data-tab="tools">Tools</button>
   </div>
 
-  <div class="card">
-    <h2>Calculate Price</h2>
-    <form id="price-form">
-      <label for="type">Room Type</label>
-      <select id="type" required>
-        <option value="standard">standard</option>
-        <option value="premium">premium</option>
-        <option value="suite">suite</option>
-      </select>
+  <div id="bookings-tab" class="tab-content active">
+    <div class="card full-width">
+      <h2>Room Inventory</h2>
+      <div id="inventory" class="inventory">
+        <div class="empty-state">Loading inventory...</div>
+      </div>
+    </div>
 
-      <label for="season">Season</label>
-      <select id="season" required>
-        <option value="low">low</option>
-        <option value="high">high</option>
-      </select>
+    <div class="grid">
+      <div class="card">
+        <h2>Create Booking</h2>
+        <form id="booking-form">
+          <label for="guestName">Guest Name</label>
+          <input type="text" id="guestName" required placeholder="Jane Doe">
 
-      <label for="discount">Discount (0–1)</label>
-      <input type="number" id="discount" step="0.01" min="0" max="1" value="0" required>
+          <label for="guestEmail">Guest Email</label>
+          <input type="email" id="guestEmail" required placeholder="jane@example.com">
 
-      <button type="submit">Calculate Price</button>
-    </form>
-    <div id="price-result" class="result" style="display:none;"></div>
+          <label for="bookingRoomType">Room Type</label>
+          <select id="bookingRoomType" required>
+            <option value="standard">Standard</option>
+            <option value="premium">Premium</option>
+            <option value="suite">Suite</option>
+          </select>
+
+          <div class="row">
+            <div>
+              <label for="checkIn">Check-in</label>
+              <input type="date" id="checkIn" required>
+            </div>
+            <div>
+              <label for="checkOut">Check-out</label>
+              <input type="date" id="checkOut" required>
+            </div>
+          </div>
+
+          <label for="bookingSeason">Season</label>
+          <select id="bookingSeason" required>
+            <option value="low">Low</option>
+            <option value="high">High</option>
+          </select>
+
+          <label for="bookingDiscount">Discount (0–1)</label>
+          <input type="number" id="bookingDiscount" step="0.01" min="0" max="1" value="0">
+
+          <button type="submit">Create Booking</button>
+        </form>
+        <div id="booking-result" class="result" style="display:none;"></div>
+      </div>
+
+      <div class="card">
+        <h2>Check Availability &amp; Quote</h2>
+        <form id="quote-form">
+          <label for="quoteRoomType">Room Type</label>
+          <select id="quoteRoomType" required>
+            <option value="standard">Standard</option>
+            <option value="premium">Premium</option>
+            <option value="suite">Suite</option>
+          </select>
+
+          <div class="row">
+            <div>
+              <label for="quoteCheckIn">Check-in</label>
+              <input type="date" id="quoteCheckIn" required>
+            </div>
+            <div>
+              <label for="quoteCheckOut">Check-out</label>
+              <input type="date" id="quoteCheckOut" required>
+            </div>
+          </div>
+
+          <label for="quoteSeason">Season</label>
+          <select id="quoteSeason" required>
+            <option value="low">Low</option>
+            <option value="high">High</option>
+          </select>
+
+          <label for="quoteDiscount">Discount (0–1)</label>
+          <input type="number" id="quoteDiscount" step="0.01" min="0" max="1" value="0">
+
+          <button type="submit">Get Quote</button>
+        </form>
+        <div id="quote-result" class="result" style="display:none;"></div>
+      </div>
+    </div>
+
+    <div class="card full-width">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2>All Bookings</h2>
+        <button class="secondary small" id="refresh-bookings">Refresh</button>
+      </div>
+      <div id="bookings-table">
+        <div class="empty-state">Loading bookings...</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tools-tab" class="tab-content">
+    <div class="grid">
+      <div class="card">
+        <h2>Cancel Reservation Check</h2>
+        <form id="cancel-form">
+          <label for="reservationDate">Reservation Start</label>
+          <input type="datetime-local" id="reservationDate" required>
+          <button type="submit">Check Cancellation</button>
+        </form>
+        <div id="cancel-result" class="result" style="display:none;"></div>
+      </div>
+
+      <div class="card">
+        <h2>Single-Night Price</h2>
+        <form id="price-form">
+          <label for="type">Room Type</label>
+          <select id="type" required>
+            <option value="standard">standard</option>
+            <option value="premium">premium</option>
+            <option value="suite">suite</option>
+          </select>
+
+          <label for="season">Season</label>
+          <select id="season" required>
+            <option value="low">low</option>
+            <option value="high">high</option>
+          </select>
+
+          <label for="discount">Discount (0–1)</label>
+          <input type="number" id="discount" step="0.01" min="0" max="1" value="0" required>
+
+          <button type="submit">Calculate Price</button>
+        </form>
+        <div id="price-result" class="result" style="display:none;"></div>
+      </div>
+    </div>
   </div>
 
   <script>
-    // Cancel form
-    const cancelForm = document.getElementById('cancel-form');
-    const cancelResult = document.getElementById('cancel-result');
+    // Tab switching
+    document.querySelectorAll('.tab').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach((c) => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab + '-tab').classList.add('active');
+      });
+    });
 
-    cancelForm.addEventListener('submit', async (e) => {
+    function showResult(el, data, isError) {
+      el.style.display = 'block';
+      el.className = 'result ' + (isError ? 'error' : 'success');
+      el.textContent = JSON.stringify(data, null, 2);
+    }
+
+    function toISODate(dateStr) {
+      return dateStr ? new Date(dateStr + 'T12:00:00').toISOString() : '';
+    }
+
+    // Inventory
+    async function loadInventory() {
+      const res = await fetch('/api/inventory');
+      const data = await res.json();
+      const container = document.getElementById('inventory');
+      container.innerHTML = Object.entries(data)
+        .map(([type, info]) => `
+          <div class="inventory-item">
+            <div class="count">${info.total - info.confirmed}/${info.total}</div>
+            <div class="label">${type} available</div>
+          </div>
+        `)
+        .join('');
+    }
+
+    // Bookings table
+    async function loadBookings() {
+      const res = await fetch('/api/bookings');
+      const bookings = await res.json();
+      const container = document.getElementById('bookings-table');
+
+      if (bookings.length === 0) {
+        container.innerHTML = '<div class="empty-state">No bookings yet. Create one above!</div>';
+        return;
+      }
+
+      container.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Guest</th>
+              <th>Room</th>
+              <th>Check-in</th>
+              <th>Check-out</th>
+              <th>Nights</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${bookings.map((b) => `
+              <tr>
+                <td>${b.guest.name}<br><small>${b.guest.email}</small></td>
+                <td>${b.roomType}</td>
+                <td>${b.checkIn.slice(0, 10)}</td>
+                <td>${b.checkOut.slice(0, 10)}</td>
+                <td>${b.nights}</td>
+                <td>$${b.totalPrice}</td>
+                <td><span class="badge ${b.status}">${b.status}</span></td>
+                <td>
+                  ${b.status === 'confirmed'
+                    ? `<button class="danger small" onclick="cancelBooking('${b.id}')">Cancel</button>`
+                    : ''}
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    async function cancelBooking(id) {
+      if (!confirm('Cancel this booking?')) return;
+      const res = await fetch('/api/bookings/' + id, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Cancellation failed');
+      }
+      loadBookings();
+      loadInventory();
+    }
+
+    document.getElementById('refresh-bookings').addEventListener('click', () => {
+      loadBookings();
+      loadInventory();
+    });
+
+    // Create booking
+    document.getElementById('booking-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const body = {
+        guest: {
+          name: document.getElementById('guestName').value,
+          email: document.getElementById('guestEmail').value,
+        },
+        roomType: document.getElementById('bookingRoomType').value,
+        checkIn: toISODate(document.getElementById('checkIn').value),
+        checkOut: toISODate(document.getElementById('checkOut').value),
+        season: document.getElementById('bookingSeason').value,
+        discount: parseFloat(document.getElementById('bookingDiscount').value),
+      };
+
+      const res = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      showResult(document.getElementById('booking-result'), data, !res.ok);
+
+      if (res.ok) {
+        loadBookings();
+        loadInventory();
+      }
+    });
+
+    // Quote
+    document.getElementById('quote-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const checkIn = toISODate(document.getElementById('quoteCheckIn').value);
+      const checkOut = toISODate(document.getElementById('quoteCheckOut').value);
+      const roomType = document.getElementById('quoteRoomType').value;
+
+      const [availRes, quoteRes] = await Promise.all([
+        fetch('/api/availability', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ roomType, checkIn, checkOut }),
+        }),
+        fetch('/api/quote', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            roomType,
+            checkIn,
+            checkOut,
+            season: document.getElementById('quoteSeason').value,
+            discount: parseFloat(document.getElementById('quoteDiscount').value),
+          }),
+        }),
+      ]);
+
+      const availability = await availRes.json();
+      const quote = await quoteRes.json();
+      showResult(document.getElementById('quote-result'), { availability, quote }, false);
+    });
+
+    // Cancel check (legacy)
+    document.getElementById('cancel-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const dateInput = document.getElementById('reservationDate').value;
-      // Convert datetime-local to ISO
       const reservationDate = dateInput ? new Date(dateInput).toISOString() : '';
 
       const res = await fetch('/cancel', {
@@ -113,33 +509,41 @@
         body: JSON.stringify({ reservationDate }),
       });
       const data = await res.json();
-
-      cancelResult.style.display = 'block';
-      cancelResult.className = 'result ' + (data.allowed ? 'success' : 'error');
-      cancelResult.textContent = JSON.stringify(data, null, 2);
+      showResult(document.getElementById('cancel-result'), data, !data.allowed);
     });
 
-    // Price form
-    const priceForm = document.getElementById('price-form');
-    const priceResult = document.getElementById('price-result');
-
-    priceForm.addEventListener('submit', async (e) => {
+    // Price (legacy)
+    document.getElementById('price-form').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const type = document.getElementById('type').value;
-      const season = document.getElementById('season').value;
-      const discount = parseFloat(document.getElementById('discount').value);
-
       const res = await fetch('/price', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, season, discount }),
+        body: JSON.stringify({
+          type: document.getElementById('type').value,
+          season: document.getElementById('season').value,
+          discount: parseFloat(document.getElementById('discount').value),
+        }),
       });
       const data = await res.json();
-
-      priceResult.style.display = 'block';
-      priceResult.className = 'result ' + (data.error ? 'error' : 'success');
-      priceResult.textContent = JSON.stringify(data, null, 2);
+      showResult(document.getElementById('price-result'), data, !!data.error);
     });
+
+    // Set default dates to tomorrow and day after
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const dayAfter = new Date();
+    dayAfter.setDate(dayAfter.getDate() + 3);
+    const fmt = (d) => d.toISOString().slice(0, 10);
+
+    ['checkIn', 'quoteCheckIn'].forEach((id) => {
+      document.getElementById(id).value = fmt(tomorrow);
+    });
+    ['checkOut', 'quoteCheckOut'].forEach((id) => {
+      document.getElementById(id).value = fmt(dayAfter);
+    });
+
+    loadInventory();
+    loadBookings();
   </script>
 </body>
 </html>
